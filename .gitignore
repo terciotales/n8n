@@ -1,0 +1,26 @@
+# Logs
+*.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependências (caso adicione algo Node no futuro)
+node_modules/
+dist/
+.build/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+docker-compose.override.yml
+.docker/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
+
+# Dados persistidos do n8n
+data/
