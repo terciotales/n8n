@@ -16,3 +16,16 @@ services:
     volumes:
       - ./data:/home/node/.n8n
     restart: always
+
+  playwright:
+    image: mcr.microsoft.com/playwright/python:latest
+    container_name: playwright
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/playwright:/root/playwright
+    working_dir: /root/playwright
+    command: ["/bin/sh", "-c", "pip install -r requirements.txt && uvicorn app:app --host 0.0.0.0 --port 8000"]
+    networks:
+      - default
+    restart: always
