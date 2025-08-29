@@ -18,14 +18,14 @@ services:
     restart: always
 
   playwright:
-    image: mcr.microsoft.com/playwright/python:latest
+    image: node:18
     container_name: playwright
     ports:
       - "8000:8000"
     volumes:
-      - ./data/playwright:/root/playwright
-    working_dir: /root/playwright
-    command: ["/bin/sh", "-c", "pip install -r requirements.txt && uvicorn app:app --host 0.0.0.0 --port 8000"]
+      - ./playwright:/usr/src/app
+    working_dir: /usr/src/app
+    command: ["/bin/sh", "-c", "npm install && npm start"]
     networks:
       - default
     restart: always

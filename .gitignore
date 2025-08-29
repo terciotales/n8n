@@ -7,6 +7,7 @@ yarn-error.log*
 
 # Dependências (caso adicione algo Node no futuro)
 node_modules/
+**/node_modules/
 dist/
 .build/
 
