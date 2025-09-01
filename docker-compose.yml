@@ -16,16 +16,3 @@ services:
     volumes:
       - ./data:/home/node/.n8n
     restart: always
-
-  playwright:
-    image: node:18
-    container_name: playwright
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./playwright:/usr/src/app
-    working_dir: /usr/src/app
-    command: ["/bin/sh", "-c", "npm install && npm start"]
-    networks:
-      - default
-    restart: always

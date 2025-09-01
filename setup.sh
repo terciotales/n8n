@@ -6,7 +6,13 @@ echo "🚀 Iniciando setup do projeto n8n + Docker..."
 echo "🛑 Verificando containers antigos..."
 docker-compose down --remove-orphans
 
-# 1. Criar pasta de dados
+# 1. Remover pasta playwright antiga (se existir)
+if [ -d "playwright" ]; then
+  rm -rf playwright
+  echo "🗑️  Pasta 'playwright' removida (não mais necessária)."
+fi
+
+# 2. Criar pasta de dados
 if [ ! -d "data" ]; then
   mkdir data
   echo "📂 Pasta 'data' criada."
@@ -14,7 +20,7 @@ else
   echo "📂 Pasta 'data' já existe, pulando..."
 fi
 
-# 2. Criar arquivo .env
+# 3. Criar arquivo .env
 if [ ! -f ".env" ]; then
   cat <<EOL > .env
 # Configuração do n8n
@@ -29,8 +35,9 @@ else
   echo "📝 Arquivo .env já existe, pulando..."
 fi
 
-# 3. Subir containers
-echo "🐳 Subindo containers com docker-compose..."
+# 4. Subir containers
+echo "🐳 Subindo container do n8n..."
 docker-compose up -d --build
 
 echo "✅ Setup concluído! Acesse: http://localhost:5678"
+echo "ℹ️  O Playwright agora será usado diretamente dentro do n8n quando necessário."
