@@ -1,0 +1,156 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "check-site",
+                "options": {}
+            },
+            "id": "1",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "command": "node",
+                "arguments": [
+                    "/data/screenshot.js",
+                    "={{$json[\"url\"]}}"
+                ]
+            },
+            "id": "2",
+            "name": "Run Playwright",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [500, 300]
+        },
+        {
+            "parameters": {
+                "filePath": "/data/text.txt",
+                "options": {}
+            },
+            "id": "3",
+            "name": "Read Text",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "typeVersion": 1,
+            "position": [750, 200]
+        },
+        {
+            "parameters": {
+                "filePath": "/data/broken-links.json",
+                "options": {}
+            },
+            "id": "4",
+            "name": "Read Broken Links",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "typeVersion": 1,
+            "position": [750, 400]
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "operation": "create",
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Você é um revisor de sites. Aponte erros de ortografia, clareza de conteúdo e possíveis problemas de layout com base no texto e nos metadados fornecidos."
+                    },
+                    {
+                        "role": "user",
+                        "content": "URL analisada: {{$json.url}}\n\nTexto extraído (limpo):\n{{$json.text}}\n\nLinks possivelmente quebrados (JSON):\n{{$json.brokenLinksJson}}\n\nInstruções: 1) Liste erros de ortografia e sugira correções; 2) Aponte problemas de conteúdo (clareza, repetição, CTAs confusos); 3) Indique suspeitas de problemas de layout que podem ser inferidos do texto (hierarquia, headings ausentes, contrastes), marcando como 'suposição' quando não for conclusivo."
+                    }
+                ],
+                "options": {
+                    "temperature": 0.2,
+                    "maxTokens": 900
+                }
+            },
+            "id": "OpenAI_Chat",
+            "name": "OpenAI Chat",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 2,
+            "position": [1000, 200],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR-CREDENTIAL-ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "6",
+            "name": "Return to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [1250, 300]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Run Playwright",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Run Playwright": {
+            "main": [
+                [
+                    {
+                        "node": "Read Text",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Read Broken Links",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Read Text": {
+            "main": [
+                [
+                    {
+                        "node": "OpenAI Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Return to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Read Broken Links": {
+            "main": [
+                [
+                    {
+                        "node": "Return to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
