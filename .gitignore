@@ -24,4 +24,4 @@ docker-compose.override.yml
 .env.*.local
 
 # Dados persistidos do n8n
-data/
+n8n/

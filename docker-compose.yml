@@ -18,5 +18,12 @@ services:
     restart: always
   playwright:
     build: ./playwright
+    container_name: playwright-service
     ports:
       - "3000:3000"
+    volumes:
+      - ./playwright:/app
+      - /app/node_modules
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
