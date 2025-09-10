@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 class ScrapeService {
-	async scrape(url, returnType, customCode = null, req = null) {
+	async scrape(url, formats, customCode = null, req = null, waitUntil = 'load') {
 		let browser;
 
 		try {
@@ -15,12 +15,7 @@ class ScrapeService {
 
 			const page = await browser.newPage();
 
-			await page.goto(url, {waitUntil: 'domcontentloaded'});
-
-			console.log('capturando');
-
-			// Espera a página carregar completamente
-			await page.waitForTimeout(5000);
+			await page.goto(url, {waitUntil, timeout: 30000});
 
 			// Se código customizado for fornecido, executa ele APÓS a página carregar
 			if (customCode) {
@@ -29,31 +24,53 @@ class ScrapeService {
 				await page.waitForTimeout(1000);
 			}
 
-			let result;
+			const scrollStep = 200; // quantos pixels rolar por vez
+			const delay = 1500; // 1 segundo
 
-			switch (returnType) {
-				case 'html':
-					result = await this.getHTML(page);
-					break;
-				case 'markdown':
-					result = await this.getMarkdown(page);
-					break;
-				case 'links':
-					result = await this.getLinks(page);
-					break;
-				case 'screenshot':
-					result = await this.getScreenshot(page, req);
-					break;
-				default:
-					throw new Error('Tipo de retorno inválido');
+			// Pega a altura total da página
+			const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+
+			for (let pos = 0; pos < bodyHeight; pos += scrollStep) {
+				await page.evaluate((y) => window.scrollTo(0, y), pos);
+				await page.waitForTimeout(delay);
+
+				console.log(`Rolou até: ${pos}px / ${bodyHeight}px`);
 			}
+
+			// Volta pro topo
+			await page.evaluate(() => window.scrollTo(0, 0));
+
+			// Espera a página carregar completamente
+			await page.waitForTimeout(10000);
+
+			let result = {};
+
+			if (formats.includes('screenshot')) {
+				result.screenshots = [await this.getScreenshot(page, req)];
+			}
+
+			if (formats.includes('html')) {
+				result.html = await this.getHTML(page);
+			}
+
+			if (formats.includes('markdown')) {
+				result.markdown = await this.getMarkdown(page);
+			}
+
+			if (formats.includes('links')) {
+				result.links = await this.getLinks(page);
+			}
+
+			// Extrai metadados da página
+			const metadata = await this.getMetadata(page, url);
 
 			return {
 				success: true,
 				url,
-				returnType,
+				formats,
 				data: result,
 				timestamp: new Date().toISOString(),
+				metadata,
 			};
 
 		} catch (error) {
@@ -145,6 +162,31 @@ class ScrapeService {
 			console.error('Erro ao salvar o screenshot');
 			throw new Error('Falha ao salvar screenshot');
 		}
+	}
+
+	async getMetadata(page, url) {
+		return await page.evaluate((sourceURL) => {
+			// Função auxiliar para pegar conteúdo de meta tags
+			function getMeta(name, attr = 'content') {
+				const el = document.querySelector(`meta[name='${name}']`) || document.querySelector(`meta[property='${name}']`);
+				return el ? el.getAttribute(attr) : null;
+			}
+
+			// Pega og:locale:alternate (pode ter vários)
+			const ogLocaleAlternate = Array.from(document.querySelectorAll('meta[property=\'og:locale:alternate\']')).map(el => el.getAttribute('content')).filter(Boolean);
+			return {
+				title: document.querySelector('title')?.innerText || getMeta('og:title') || '',
+				description: getMeta('description') || getMeta('og:description') || '',
+				robots: getMeta('robots') || '',
+				ogTitle: getMeta('og:title') || '',
+				ogDescription: getMeta('og:description') || '',
+				ogUrl: getMeta('og:url') || sourceURL,
+				ogImage: getMeta('og:image') || '',
+				ogLocaleAlternate,
+				ogSiteName: getMeta('og:site_name') || '',
+				sourceURL,
+			};
+		}, url);
 	}
 }
 
