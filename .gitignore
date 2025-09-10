@@ -25,3 +25,4 @@ docker-compose.override.yml
 
 # Dados persistidos do n8n
 n8n/
+playwright/public/screenshots/
