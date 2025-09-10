@@ -13,32 +13,40 @@ app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
-  res.send('Playwright service running');
+	res.send('Playwright service running');
 });
 
 app.post('/scrape', async (req, res) => {
-  try {
-    const { url, returnType, code } = req.body;
+	try {
+		const {url, formats, code} = req.body;
 
-    if (!url) {
-      return res.status(400).json({ error: 'URL é obrigatória' });
-    }
+		if (!url) {
+			return res.status(400).json({error: 'URL é obrigatória'});
+		}
 
-    if (!returnType || !['markdown', 'html', 'links', 'screenshot'].includes(returnType)) {
-      return res.status(400).json({
-        error: 'returnType deve ser: markdown, html, links ou screenshot'
-      });
-    }
+		if (!formats || !Array.isArray(formats) || formats.length === 0) {
+			return res.status(400).json({error: 'formats deve ser um array não vazio'});
+		}
 
-    const result = await scrapeService.scrape(url, returnType, code, req);
-    res.json(result);
+		const validFormats = ['markdown', 'html', 'links', 'screenshot'];
 
-  } catch (error) {
-    console.error('Erro no scraping:', error);
-    res.status(500).json({ error: error.message });
-  }
+		for (const format of formats) {
+			if (!validFormats.includes(format)) {
+				return res.status(400).json({
+					error: 'formats deve ser: markdown, html, links ou screenshot',
+				});
+			}
+		}
+
+		const result = await scrapeService.scrape(url, formats, code, req);
+		res.json(result);
+
+	} catch (error) {
+		console.error('Erro no scraping:', error);
+		res.status(500).json({error: error.message});
+	}
 });
 
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+	console.log(`Servidor rodando na porta ${port}`);
 });
