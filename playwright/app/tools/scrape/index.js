@@ -24,22 +24,6 @@ class ScrapeService {
 				await page.waitForTimeout(1000);
 			}
 
-			const scrollStep = 200; // quantos pixels rolar por vez
-			const delay = 1500; // 1 segundo
-
-			// Pega a altura total da página
-			const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
-
-			for (let pos = 0; pos < bodyHeight; pos += scrollStep) {
-				await page.evaluate((y) => window.scrollTo(0, y), pos);
-				await page.waitForTimeout(delay);
-
-				console.log(`Rolou até: ${pos}px / ${bodyHeight}px`);
-			}
-
-			// Volta pro topo
-			await page.evaluate(() => window.scrollTo(0, 0));
-
 			// Espera a página carregar completamente
 			await page.waitForTimeout(10000);
 
@@ -191,3 +175,5 @@ class ScrapeService {
 }
 
 module.exports = new ScrapeService();
+
+
